@@ -19,6 +19,7 @@ export default function Home() {
   const resetTimerRef = useRef<boolean>(false);
   const [lastSetDuration, setLastSetDuration] = useState<number>(900); // Track the last user-set duration
   const [backspaceDisabled, setBackspaceDisabled] = useState<boolean>(false);
+  const [isFullscreen, setIsFullScreen] = useState<boolean>(false);
 
   const placeholderOptions = [
     "Begin writing",
@@ -252,6 +253,17 @@ export default function Home() {
       resetTimerRef.current = false;
     }, 100);
   };
+  
+  // Changes full screen settings
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen()
+        .catch(err => console.error("Failed to enter fullscreen", err));
+    } else {
+      document.exitFullscreen()
+        .catch(err => console.error("Failed to exit fullscreen", err));
+    }
+  };
 
   // Load disabled backspace localStorage settings.
   useEffect(() => {
@@ -335,8 +347,39 @@ export default function Home() {
     localStorage.setItem("freewrite-backspace-disabled", backspaceDisabled.toString());
   }, [backspaceDisabled]);
 
+  //UI in sync even when exit fullscreen manually
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+  
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-white text-gray-800">
+      {/*Full screen button*/}
+      <button
+        onClick={toggleFullScreen}
+        className="absolute top-4 right-4 z-50 p-2 rounded-md bg-white border border-gray-300 shadow hover:bg-gray-100 transition"
+        title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+      >
+        {isFullscreen ? (
+          // Exit fullscreen icon
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-fullscreen-exit" viewBox="0 0 16 16">
+            <path d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5m5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5M0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5m10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0z"/>
+          </svg>
+        ) : (
+          // Enter fullscreen icon
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-fullscreen" viewBox="0 0 16 16">
+            <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
+          </svg>
+        )}
+      </button>
+
       {/* Sidebar */}
       <div
         className={`w-64 border-r border-gray-200 transition-all duration-300 ${
