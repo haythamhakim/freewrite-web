@@ -18,6 +18,7 @@ export default function Home() {
   const [placeholderText, setPlaceholderText] = useState<string>("");
   const resetTimerRef = useRef<boolean>(false);
   const [lastSetDuration, setLastSetDuration] = useState<number>(900); // Track the last user-set duration
+  const [backspaceDisabled, setBackspaceDisabled] = useState<boolean>(false);
 
   const placeholderOptions = [
     "Begin writing",
@@ -252,6 +253,14 @@ export default function Home() {
     }, 100);
   };
 
+  // Load disabled backspace localStorage settings.
+  useEffect(() => {
+    const stored = localStorage.getItem("freewrite-backspace-disabled");
+    if (stored !== null) {
+      setBackspaceDisabled(stored === "true");
+    }
+  }, []);
+
   // Effect for timer
   useEffect(() => {
     // Initialize interval outside the conditional
@@ -320,6 +329,11 @@ export default function Home() {
       setTimerInput(formatTime(timeRemaining));
     }
   }, [timeRemaining, editingTimer]);
+
+  //Saves backspace preferences persistently
+  useEffect(() => {
+    localStorage.setItem("freewrite-backspace-disabled", backspaceDisabled.toString());
+  }, [backspaceDisabled]);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-white text-gray-800">
@@ -443,6 +457,11 @@ export default function Home() {
               }}
               placeholder={placeholderText}
               spellCheck={false}
+              onKeyDown={(e) => {
+                if (backspaceDisabled && e.key === "Backspace") {
+                  e.preventDefault();
+                }
+              }}
             />
           </div>
         </div>
@@ -486,6 +505,25 @@ export default function Home() {
 
           {/* Right side controls */}
           <div className="flex items-center space-x-4">
+            {/*Backspace Controls*/}
+            <div className="flex items-center space-x-2">
+              <label className="flex items-center space-x-2 text-sm cursor-pointer select-none">
+                <div
+                  className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors duration-300 ${
+                    backspaceDisabled ? "bg-black" : "bg-gray-300"
+                  }`}
+                  onClick={() => setBackspaceDisabled(!backspaceDisabled)}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+                      backspaceDisabled ? "translate-x-4" : "translate-x-0"
+                    }`}
+                  />
+                </div>
+                <span>Disable Backspace</span>
+              </label>
+            </div>
+            
             {/* Timer */}
             <div className="flex items-center space-x-2">
               {editingTimer ? (
